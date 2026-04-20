@@ -147,10 +147,14 @@ export default function Dashboard() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4 text-gray-500" />
-                <span className="text-sm text-gray-700">{user?.name}</span>
-              </div>
+              <Link 
+  to="/profile"
+  onClick={() => console.log("Clicked profile")}
+  className="flex items-center space-x-2 cursor-pointer"
+>
+  <User className="h-4 w-4 text-gray-500" />
+  <span className="text-sm text-gray-700">{user?.name || "Profile"}</span>
+</Link>
               <Button 
                 variant="outline" 
                 size="sm" 

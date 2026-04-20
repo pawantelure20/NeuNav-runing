@@ -118,7 +118,8 @@ Please return valid JSON only, no additional text or markdown formatting."""
         
         try:
             # Try to parse the JSON response
-            ai_data = json.loads(ai_response.strip())
+            cleaned_response = ai_response.replace('`', '').replace("'", "").strip()
+            ai_data = json.loads(cleaned_response)
             
             # Convert AI response to roadmap format expected by the application
             roadmap_data = {
@@ -136,8 +137,9 @@ Please return valid JSON only, no additional text or markdown formatting."""
             
             return roadmap_data
             
-        except json.JSONDecodeError:
+        except json.JSONDecodeError as err:
             # Fallback: if AI doesn't return valid JSON, create a structured response
+            print(f"Error parsing AI response: {err}")
             return self._create_fallback_roadmap(ai_response, topic, brain_type)
     
     def _convert_to_steps(self, ai_data: Dict) -> list:
@@ -145,24 +147,54 @@ Please return valid JSON only, no additional text or markdown formatting."""
         steps = []
         
         timeline = ai_data.get("timeline", {})
-        phases = timeline.get("phased_roadmap", timeline.get("phases", {}))
+        phases = timeline.get("phased_roadmap", timeline.get("phased roadmap", timeline.get("phases", {})))
         
         step_number = 1
         
-        # Process beginner, intermediate, advanced phases
-        for phase_name, phase_content in phases.items():
-            if isinstance(phase_content, list):
-                for item in phase_content:
+        # Process beginner, intermediate, advanced phases in dict or list format
+        if isinstance(phases, list):
+            for phase in phases:
+                phase_name = phase.get("phase") or phase.get("name") or "Phase"
+                phase_goals = phase.get("goals", [])
+                if isinstance(phase_goals, list):
+                    for goal in phase_goals:
+                        steps.append({
+                            "step_number": step_number,
+                            "title": f"{phase_name.title()}: {goal}",
+                            "description": goal,
+                            "resource_type": "ai_generated",
+                            "estimated_time_minutes": 60,
+                            "brain_type_optimized": True,
+                            "phase": phase_name,
+                            "duration": phase.get("duration")
+                        })
+                        step_number += 1
+                elif isinstance(phase_goals, str):
                     steps.append({
                         "step_number": step_number,
-                        "title": f"{phase_name.title()}: {item}" if isinstance(item, str) else f"{phase_name.title()} Step {step_number}",
-                        "description": item if isinstance(item, str) else f"Complete {phase_name} level activities",
+                        "title": f"{phase_name.title()}: {phase_goals}",
+                        "description": phase_goals,
                         "resource_type": "ai_generated",
                         "estimated_time_minutes": 60,
                         "brain_type_optimized": True,
-                        "phase": phase_name
+                        "phase": phase_name,
+                        "duration": phase.get("duration")
                     })
                     step_number += 1
+        elif isinstance(phases, dict):
+            for phase_name, phase_content in phases.items():
+                if isinstance(phase_content, list):
+                    for item in phase_content:
+                        steps.append({
+                            "step_number": step_number,
+                            "title": f"{phase_name.title()}: {item}" if isinstance(item, str) else f"{phase_name.title()} Step {step_number}",
+                            "description": item if isinstance(item, str) else f"Complete {phase_name} level activities",
+                            "resource_type": "ai_generated",
+                            "estimated_time_minutes": 60,
+                            "brain_type_optimized": True,
+                            "phase": phase_name
+                        })
+                        step_number += 1
         
         # If no phases found, create steps from resources
         if not steps:

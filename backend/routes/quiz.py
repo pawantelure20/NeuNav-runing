@@ -12,6 +12,7 @@ client = MongoClient(mongo_uri)
 db = client.get_database()
 
 @quiz_bp.route('/questions', methods=['GET'])
+@jwt_required()
 def get_questions():
     """Get all quiz questions"""
     try:

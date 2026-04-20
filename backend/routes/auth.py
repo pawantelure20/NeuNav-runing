@@ -21,7 +21,7 @@ def register():
         "name": data["name"],
         "email": data["email"],
         "password_hash": generate_password_hash(data["password"]),
-        "brain_type": data.get("brain_type"),
+        #"brain_type": data.get("brain_type"),
         "created_at": datetime.utcnow()
     }
     db.users.insert_one(user)
@@ -55,3 +55,61 @@ def verify_token():
         "msg": "Token valid.", 
         "user": user_data
     }), 200
+
+
+@auth_bp.route('/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.json
+    email = data.get("email")
+
+    user = db.users.find_one({"email": email})
+    if not user:
+        return jsonify({"msg": "User not found"}), 404
+
+    import secrets
+    token = secrets.token_urlsafe(32)
+
+    db.users.update_one(
+        {"email": email},
+        {"$set": {
+            "reset_token": token,
+            "reset_token_created_at": datetime.utcnow()
+        }}
+    )
+
+    # In real app → send email
+    return jsonify({
+        "msg": "Reset token generated",
+        "reset_token": token   # remove this in production
+    }), 200
+    
+    
+@auth_bp.route('/reset-password', methods=['POST'])
+def reset_password():
+    data = request.json
+    token = data.get("token")
+    new_password = data.get("new_password")
+
+    user = db.users.find_one({"reset_token": token})
+    if not user:
+        return jsonify({"msg": "Invalid or expired token"}), 400
+
+    # OPTIONAL: Token expiry check (15 min)
+    from datetime import timedelta
+    if datetime.utcnow() - user.get("reset_token_created_at", datetime.utcnow()) > timedelta(minutes=15):
+        return jsonify({"msg": "Token expired"}), 400
+
+    hashed_password = generate_password_hash(new_password)
+
+    db.users.update_one(
+        {"_id": user["_id"]},
+        {
+            "$set": {"password_hash": hashed_password},
+            "$unset": {
+                "reset_token": "",
+                "reset_token_created_at": ""
+            }
+        }
+    )
+
+    return jsonify({"msg": "Password reset successful"}), 200

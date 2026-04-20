@@ -75,9 +75,9 @@ class RoadmapGenerator:
         try:
             # Check for existing roadmap to prevent duplicates
             existing_roadmap = self._check_existing_roadmap(user_id, topic, brain_type)
-            if existing_roadmap:
-                print(f"Found existing roadmap for {topic} - {brain_type}, returning existing one")
-                return existing_roadmap
+           # if existing_roadmap:
+               # print(f"Found existing roadmap for {topic} - {brain_type}, returning existing one")
+                #return existing_roadmap
             
             # Use AI generation if available
             if self.use_ai and self.ai_generator:
