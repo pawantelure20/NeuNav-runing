@@ -14,7 +14,7 @@ class AIRoadmapGenerator:
     def __init__(self):
         self.api_key = os.getenv('OPENROUTER_API_KEY')
         self.base_url = "https://openrouter.ai/api/v1/chat/completions"
-        self.model = "meta-llama/llama-3.3-70b-instruct"  # Meta Llama 3.3 8B Instruct
+        self.model = "meta-llama/llama-3.3-70B-instruct"  # Meta Llama 3.3 8B Instruct
         
         if not self.api_key:
             print("Warning: OPENROUTER_API_KEY not set. AI features will be disabled.")
